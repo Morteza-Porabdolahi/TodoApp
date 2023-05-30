@@ -9,6 +9,10 @@ body {
   background-color: #eff1f2;
 }
 
+i {
+  pointer-events: none;
+}
+
 .date {
   font-size: 0.8rem;
 }
@@ -21,6 +25,7 @@ body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
