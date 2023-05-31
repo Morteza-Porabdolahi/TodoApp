@@ -15,7 +15,7 @@ class Todos {
 		this.todosContainer = todosContainer;
 		this.todoTiteInputElem = $.querySelector(".add-todo-input");
 		this.selectElement = $.querySelector(".filter-select");
-		this.setEventsForBtns();
+		this.setEventsForElems();
 		this.render(this.todos, "");
 	}
 
@@ -42,8 +42,8 @@ class Todos {
 			  <div class="col-4 d-flex flex-column align-items-end">
 				  <div class="d-flex gap-2 fs-5 align-items-center">
 					<div class="align-items-center d-flex gap-2 text-primary" role="button">
-				  <input placeholder='New Title...' type='text' class="opacity-anim form-control shadow-none d-none" data-id="${todo.id}">
-					 <label for='edit-check' role='button' class='edit-btn' data-id="${todo.id}">
+				  <input placeholder='New Title...' type='text' class="opacity-anim form-control shadow-none d-none" data-id="${todo.id}" >
+					 <label role='button' class='edit-btn' data-id="${todo.id}">
 			  <i class="bi bi-pen edit-icon"></i>
 			  </label>
 			  </div>
@@ -65,13 +65,25 @@ class Todos {
 	}
 
 	getAllTodos() {
-		return JSON.parse(localStorage.getItem("todos") || "[]");
+		return JSON.parse(localStorage.getItem("todos")) || [];
 	}
 
-	setEventsForBtns() {
+	setEventsForElems() {
 		let targetedElemClass;
+
+		this.todoTiteInputElem.addEventListener("keypress", e => {
+			if (e.key === "Enter") {
+				this.createTodo();
+			}
+		});
+		// Arrow functions auto bind this
+		this.selectElement.addEventListener(
+			"change",
+			this.handleSelectValue.bind(this)
+		);
 		window.addEventListener("click", e => {
 			targetedElemClass = e.target.className;
+
 			if (targetedElemClass.includes("add-btn")) {
 				this.createTodo();
 			} else if (targetedElemClass.includes("remove-btn")) {
@@ -80,16 +92,8 @@ class Todos {
 				this.openOrCloseEditInput(e);
 			} else if (targetedElemClass.includes("delete-all")) {
 				this.removeAllTodos();
-			} else if (targetedElemClass.includes("add-todo-input")) {
-				e.target.addEventListener("keypress", e => {
-					if (e.key === "Enter") {
-						this.createTodo();
-					}
-				});
 			} else if (targetedElemClass.includes("check-done")) {
 				this.markTodoAsDone(e);
-			} else if (targetedElemClass.includes("filter-select")) {
-				e.target.addEventListener("change", e => this.handleSelectValue(e));
 			}
 		});
 	}
@@ -98,24 +102,35 @@ class Todos {
 		this.render(this.todos, e.target.value);
 	}
 
-	markTodoAsDone(e) {
-		const findTodoIndex = this.todos.findIndex(
-			todo => todo.id === +e.target.dataset.id
-		);
-		this.todos[findTodoIndex].completed = !this.todos[findTodoIndex].completed;
+	findSpecificTodo(id) {
+		const todoIndex = this.todos.findIndex(todo => todo.id === id);
 
-		this.setNewTodos(this.todos);
+		return { findedTodo: { ...this.todos[todoIndex] }, todoIndex };
+	}
+
+	markTodoAsDone(e) {
+		const { findedTodo, todoIndex } = this.findSpecificTodo(
+			+e.target.dataset.id
+		);
+		const [...copyTodosArr] = this.todos;
+
+		findedTodo.completed = !findedTodo.completed;
+
+		copyTodosArr.splice(todoIndex, 1, findedTodo);
+
+		this.todos = copyTodosArr;
+		this.setNewTodos(copyTodosArr);
 		this.render(this.todos, this.selectElement.value);
 	}
 
 	deleteTodo(e) {
-		const filterDeletedTodo = this.todos.filter(
+		const filteredArray = this.todos.filter(
 			todo => todo.id !== +e.target.dataset.id
 		);
 
-		this.todos = filterDeletedTodo;
+		this.todos = filteredArray;
 		this.render(this.todos, this.selectElement.value);
-		this.setNewTodos(filterDeletedTodo);
+		this.setNewTodos(filteredArray);
 	}
 
 	openOrCloseEditInput(e) {
@@ -133,14 +148,18 @@ class Todos {
 		if (e.key === "Enter") {
 			const inputValue = e.target.value;
 
-			if (inputValue.trim() !== "") {
-				const selectedTodoId = e.target.dataset.id;
-				const indexOfTodo = this.todos.findIndex(
-					todo => todo.id === +selectedTodoId
+			if (inputValue.trim()) {
+				const { findedTodo, todoIndex } = this.findSpecificTodo(
+					+e.target.dataset.id
 				);
-				this.todos[indexOfTodo].title = inputValue;
+				const copyTodosArr = [...this.todos];
 
-				this.setNewTodos(this.todos);
+				findedTodo.title = inputValue;
+
+				copyTodosArr.splice(todoIndex, 1, findedTodo);
+
+				this.todos = copyTodosArr;
+				this.setNewTodos(copyTodosArr);
 				this.render(this.todos, this.selectElement.value);
 			}
 		}
@@ -150,23 +169,24 @@ class Todos {
 		localStorage.removeItem("todos");
 
 		this.todos = [];
-		this.render(this.todos, this.selectElement.value);
+		this.todosContainer.innerHTML = "";
 	}
 
-	createTodo = () => {
+	createTodo() {
 		const todoTitle = this.todoTiteInputElem.value;
 
-		if (todoTitle.trim() !== "") {
+		if (todoTitle.trim()) {
 			const { ...newTodo } = new Todo(todoTitle);
 			const newTodosArray = [...this.todos, newTodo];
+
 			this.todos = newTodosArray;
 
 			this.setNewTodos(newTodosArray);
-			this.render(newTodosArray, this.selectElement.value);
+			this.render(this.todos, this.selectElement.value);
 
 			this.todoTiteInputElem.value = "";
 		}
-	};
+	}
 
 	handleTodoCreatedDate(todoCreatedDate) {
 		const todoDate = new Date(todoCreatedDate);
