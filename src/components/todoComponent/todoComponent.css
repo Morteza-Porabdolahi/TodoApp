@@ -1,0 +1,25 @@
+@keyframes todoOpacity {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.opacity-anim {
+    animation: todoOpacity 0.3s linear;
+}
+
+.date {
+    font-size: 0.8rem;
+}
+
+.edit-icon {
+    color: #0d6efd;
+}
+
+.remove-icon {
+    color: #dc3545;
+}
