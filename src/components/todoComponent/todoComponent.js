@@ -126,7 +126,21 @@ export class TodoComponentElement extends HTMLElement {
 
 	deleteTodo() {
 		this.remove();
+	}
+
+	removeEvents() {
+		this.deleteTodoBtn.removeEventListener("click", () => this.deleteTodo());
+		this.editTodoBtn.removeEventListener("click", e =>
+			this.toggleEditInputClass(e)
+		);
+		this.todoCheckboxInput.removeEventListener("change", e =>
+			this.toggleTodoState(e)
+		);
+	}
+
+	disconnectedCallback() {
 		TodoService.deleteTodoFromStore(this.id);
+		this.removeEvents();
 	}
 
 	handleTodoCreatedDate(todoCreatedDate) {
